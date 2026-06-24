@@ -21,4 +21,7 @@ export interface AgentResult<T> {
   errors?: string[];
   executionTimeMs: number;
   metadata: AgentMetadata;
+  retryCount?: number;
+  failureReason?: string;
+  fallbackUsed?: boolean;
 }

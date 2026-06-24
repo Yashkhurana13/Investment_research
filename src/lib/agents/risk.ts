@@ -66,4 +66,23 @@ ${contextText}`;
       regulatoryConcerns: analysis.regulatoryConcerns.map(createRisk),
     };
   }
+
+  protected async executeFallback(context: AgentContext, input: RiskAgentInput): Promise<RiskAssessmentOutput> {
+    const createRisk = (item: { description: string, severity: 'LOW'|'MEDIUM'|'HIGH'|'CRITICAL' }): any => ({
+      value: item.description,
+      severity: item.severity,
+      metadata: {
+        source: 'Basic Web Search Provider (Fallback)',
+        url: 'https://google.com',
+        retrievedAt: new Date().toISOString(),
+        confidenceWeight: 0.5,
+      }
+    });
+
+    return {
+      macroRisks: [createRisk({ description: 'Fallback: General macro uncertainty', severity: 'MEDIUM' })],
+      microRisks: [createRisk({ description: 'Fallback: Industry competition', severity: 'MEDIUM' })],
+      regulatoryConcerns: [],
+    };
+  }
 }

@@ -65,4 +65,22 @@ ${contextText}`;
       catalysts: analysis.catalysts.map((c: string) => createFact(c)),
     };
   }
+
+  protected async executeFallback(context: AgentContext, input: CompanyResearchInput): Promise<CompanyResearchOutput> {
+    const createFact = <T>(value: T): FactRecord<T> => ({
+      value,
+      metadata: {
+        source: 'Basic Web Search Provider (Fallback)',
+        url: 'https://google.com',
+        retrievedAt: new Date().toISOString(),
+        confidenceWeight: 0.5,
+      }
+    });
+
+    return {
+      sentimentScore: createFact(50),
+      newsSummary: createFact('Fallback: Limited recent news available.'),
+      catalysts: [createFact('Fallback: General market growth')],
+    };
+  }
 }

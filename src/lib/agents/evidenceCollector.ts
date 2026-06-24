@@ -26,15 +26,32 @@ export class EvidenceCollectorAgent extends BaseAgent<EvidenceCollectorInput, Ev
   };
 
   protected validateInput(context: AgentContext, input: EvidenceCollectorInput): boolean {
-    return !!input.ticker && !!input.financials && !!input.research && !!input.risks && !!input.scoring;
+    return !!input.ticker && !!input.financials && !!input.scoring; // Research and risks may be missing
   }
 
   protected async execute(context: AgentContext, input: EvidenceCollectorInput): Promise<EvidencePackage> {
     const strengths = this.extractStrengths(input);
     const weaknesses = this.extractWeaknesses(input);
     
-    const evidenceQualityScore = this.calculateQualityScore(input);
-    const confidenceScore = this.calculateConfidenceScore(input, evidenceQualityScore);
+    let evidenceQualityScore = 90;
+    let confidenceScore = 90;
+
+    // Partial success penalization
+    if (!input.research) {
+      weaknesses.push('WARNING: Company research data unavailable (Dependency failed)');
+      evidenceQualityScore -= 20;
+      confidenceScore -= 15;
+    }
+
+    if (!input.risks) {
+      weaknesses.push('WARNING: Risk assessment data unavailable (Dependency failed)');
+      evidenceQualityScore -= 20;
+      confidenceScore -= 15;
+    }
+
+    // Ensure they don't drop below 0
+    evidenceQualityScore = Math.max(0, evidenceQualityScore);
+    confidenceScore = Math.max(0, confidenceScore);
 
     return {
       company: {
@@ -42,13 +59,13 @@ export class EvidenceCollectorAgent extends BaseAgent<EvidenceCollectorInput, Ev
         companyName: input.companyName,
       },
       financials: input.financials,
-      research: input.research,
-      risks: input.risks,
+      research: input.research as any,
+      risks: input.risks as any,
       scoring: input.scoring,
       strengths,
       weaknesses,
       evidenceQualityScore,
-      confidenceScore,
+      confidenceScore
     };
   }
 

@@ -1,4 +1,6 @@
 import { AnalysisStatus, ScoreCategory } from '../types';
+import { Annotation } from '@langchain/langgraph';
+import { BullThesisAnalysis, BearThesisAnalysis, JudgeVerdictAnalysis } from '../types/debate';
 
 export interface SourceMetadata {
   source: string;
@@ -70,29 +72,52 @@ export interface EvidencePackage {
   confidenceScore: number;
 }
 
-export interface JudgeVerdict {
-  recommendation: ScoreCategory;
-  confidenceScore: number;
-  justification: string;
-}
+export const ResearchGraphAnnotation = Annotation.Root({
+  rawQuery: Annotation<string>({
+    reducer: (x, y) => y ?? x,
+    default: () => '',
+  }),
+  resolvedTicker: Annotation<string>({
+    reducer: (x, y) => y ?? x,
+  }),
+  companyName: Annotation<string>({
+    reducer: (x, y) => y ?? x,
+  }),
+  financialMetrics: Annotation<FinancialMetricsOutput>({
+    reducer: (x, y) => y ?? x,
+  }),
+  companyResearch: Annotation<CompanyResearchOutput>({
+    reducer: (x, y) => y ?? x,
+  }),
+  riskAssessment: Annotation<RiskAssessmentOutput>({
+    reducer: (x, y) => y ?? x,
+  }),
+  scoringResult: Annotation<ScoringOutput>({
+    reducer: (x, y) => y ?? x,
+  }),
+  evidencePackage: Annotation<EvidencePackage>({
+    reducer: (x, y) => y ?? x,
+  }),
+  bullThesis: Annotation<BullThesisAnalysis>({
+    reducer: (x, y) => y ?? x,
+  }),
+  bearThesis: Annotation<BearThesisAnalysis>({
+    reducer: (x, y) => y ?? x,
+  }),
+  judgeVerdict: Annotation<JudgeVerdictAnalysis>({
+    reducer: (x, y) => y ?? x,
+  }),
+  finalReportMarkdown: Annotation<string>({
+    reducer: (x, y) => y ?? x,
+  }),
+  humanReviewStatus: Annotation<'Not Required' | 'Pending' | 'Resolved'>({
+    reducer: (x, y) => y ?? x,
+    default: () => 'Not Required',
+  }),
+  errors: Annotation<string[]>({
+    reducer: (x, y) => x.concat(y),
+    default: () => [],
+  }),
+});
 
-export interface ResearchGraphState {
-  rawQuery: string;
-  resolvedTicker?: string;
-  
-  companyResearch?: CompanyResearchOutput;
-  financialMetrics?: FinancialMetricsOutput;
-  riskAssessment?: RiskAssessmentOutput;
-  
-  scoringResult?: ScoringOutput;
-  evidencePackage?: EvidencePackage;
-  
-  bullThesis?: string;
-  bearThesis?: string;
-  
-  judgeVerdict?: JudgeVerdict;
-  humanReviewStatus: 'Not Required' | 'Pending' | 'Resolved';
-  
-  finalReportMarkdown?: string;
-  errors: string[];
-}
+export type ResearchGraphState = typeof ResearchGraphAnnotation.State;

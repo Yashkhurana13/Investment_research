@@ -1,62 +1,89 @@
-import { AgentContext, AgentResult, AgentMetadata } from './types';
-import { trackExecutionTime, logAgentStatus } from './utils';
-import { saveAgentOutput } from '../database/db';
+import { AgentContext, AgentResult, AgentExecutionStatus, AgentMetadata } from './types';
+import { retryWithBackoff } from '../core/retry';
+import { AppError, TimeoutError, ValidationError } from '../core/errors';
+
+export interface AgentConfig {
+  maxRetries?: number;
+  timeoutMs?: number;
+}
 
 export abstract class BaseAgent<TInput, TOutput> {
   abstract readonly metadata: AgentMetadata;
+  protected config: AgentConfig = { maxRetries: 3, timeoutMs: 30000 };
 
-  protected abstract validateInput(context: AgentContext, input: TInput): boolean | Promise<boolean>;
-  
+  protected abstract validateInput(context: AgentContext, input: TInput): boolean;
   protected abstract execute(context: AgentContext, input: TInput): Promise<TOutput>;
+
+  // Optional method for fallback
+  protected async executeFallback?(context: AgentContext, input: TInput): Promise<TOutput>;
+
+  private async withTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
+    let timeoutId: NodeJS.Timeout;
+    const timeoutPromise = new Promise<T>((_, reject) => {
+      timeoutId = setTimeout(() => reject(new TimeoutError(`Execution timed out after ${ms}ms`)), ms);
+    });
+    return Promise.race([promise, timeoutPromise]).finally(() => clearTimeout(timeoutId));
+  }
 
   public async run(context: AgentContext, input: TInput): Promise<AgentResult<TOutput>> {
     const startTime = Date.now();
-    logAgentStatus(this.metadata.name, 'RUNNING');
+    let retryCount = 0;
+    let fallbackUsed = false;
+    let failureReason: string | undefined;
+    let status: AgentExecutionStatus = 'FAILED';
+    let data: TOutput | undefined;
+    const errors: string[] = [];
 
     try {
-      const isValid = await this.validateInput(context, input);
-      if (!isValid) {
-        throw new Error(`Validation failed for agent: ${this.metadata.name}`);
+      if (!this.validateInput(context, input)) {
+        throw new ValidationError('Input validation failed');
       }
 
-      const data = await this.execute(context, input);
-      const executionTimeMs = trackExecutionTime(startTime);
-
-      const result: AgentResult<TOutput> = {
-        status: 'SUCCESS',
-        data,
-        executionTimeMs,
-        metadata: this.metadata,
-      };
-
-      // Best effort tracking of execution in database
-      if (context.analysisId) {
-        try {
-          await saveAgentOutput(
-            context.analysisId,
-            this.metadata.name,
-            data as any,
-            new Date(startTime),
-            new Date(),
-            executionTimeMs
-          );
-        } catch (dbError) {
-          console.error(`Failed to save agent output for ${this.metadata.name}:`, dbError);
+      // Try Primary
+      try {
+        data = await retryWithBackoff(
+          () => this.withTimeout(this.execute(context, input), this.config.timeoutMs!),
+          { maxRetries: this.config.maxRetries! },
+          (err, attempt) => { retryCount = attempt; }
+        );
+        status = 'SUCCESS';
+      } catch (err: any) {
+        if (!this.executeFallback) {
+          throw err; // No fallback available, propagate failure
         }
+        
+        // Try Fallback
+        fallbackUsed = true;
+        retryCount = 0; // Reset for fallback
+        data = await retryWithBackoff(
+          () => this.withTimeout(this.executeFallback!(context, input), this.config.timeoutMs!),
+          { maxRetries: this.config.maxRetries! },
+          (err, attempt) => { retryCount = attempt; }
+        );
+        status = 'SUCCESS';
       }
 
-      logAgentStatus(this.metadata.name, 'SUCCESS', executionTimeMs);
-      return result;
-    } catch (error: any) {
-      const executionTimeMs = trackExecutionTime(startTime);
-      logAgentStatus(this.metadata.name, 'FAILED', executionTimeMs, error.message);
-
-      return {
-        status: 'FAILED',
-        errors: [error.message || 'Unknown error occurred'],
-        executionTimeMs,
-        metadata: this.metadata,
-      };
+    } catch (err: any) {
+      status = 'FAILED';
+      failureReason = err.message;
+      if (err instanceof AppError) {
+        errors.push(`[${err.code}] ${err.message}`);
+      } else {
+        errors.push(err.message || 'Unknown error occurred');
+      }
     }
+
+    const executionTimeMs = Date.now() - startTime;
+
+    return {
+      status,
+      data,
+      errors: errors.length > 0 ? errors : undefined,
+      executionTimeMs,
+      metadata: this.metadata,
+      retryCount,
+      failureReason,
+      fallbackUsed
+    };
   }
 }

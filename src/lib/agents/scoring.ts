@@ -12,7 +12,7 @@ export class ScoringAgent extends BaseAgent<ScoringEngineInput, ScoringOutput> {
   };
 
   protected validateInput(context: AgentContext, input: ScoringEngineInput): boolean {
-    return !!input.financials && !!input.research && !!input.risks;
+    return !!input.financials; // Research and risks may be missing due to partial success
   }
 
   protected async execute(context: AgentContext, input: ScoringEngineInput): Promise<ScoringOutput> {
