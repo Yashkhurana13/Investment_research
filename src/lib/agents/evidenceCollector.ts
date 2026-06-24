@@ -56,11 +56,20 @@ export class EvidenceCollectorAgent extends BaseAgent<EvidenceCollectorInput, Ev
     const strengths: string[] = [];
     const { financials, research } = input;
 
-    if (financials.revenueGrowthYOY?.value >= 0.20) strengths.push('Revenue Growth > 20%');
-    if (financials.freeCashFlow?.value > 0) strengths.push('Positive Free Cash Flow');
-    if (financials.grossMargin?.value >= 0.50) strengths.push('Strong Gross Margin (>=50%)');
-    if (research.sentimentScore?.value >= 70) strengths.push('Positive Market Sentiment');
-    if ((research.catalysts?.length || 0) >= 2) strengths.push('Multiple Growth Catalysts');
+    const revGrowth = financials.revenueGrowthYOY?.value;
+    if (revGrowth >= 0.20) strengths.push(`Revenue Growth: ${(revGrowth * 100).toFixed(1)}% (Strong, > 20%)`);
+    
+    const fcf = financials.freeCashFlow?.value;
+    if (fcf > 0) strengths.push(`Free Cash Flow: ${fcf} (Positive)`);
+    
+    const gm = financials.grossMargin?.value;
+    if (gm >= 0.50) strengths.push(`Gross Margin: ${(gm * 100).toFixed(1)}% (Strong, >= 50%)`);
+    
+    const sent = research.sentimentScore?.value;
+    if (sent >= 70) strengths.push(`Market Sentiment: ${sent}/100 (Positive)`);
+    
+    const cat = research.catalysts?.length || 0;
+    if (cat >= 2) strengths.push(`Growth Catalysts: ${cat} potential catalysts identified`);
 
     return strengths;
   }
@@ -69,18 +78,30 @@ export class EvidenceCollectorAgent extends BaseAgent<EvidenceCollectorInput, Ev
     const weaknesses: string[] = [];
     const { financials, research, risks } = input;
 
-    if (financials.debtToEquity?.value > 2.0) weaknesses.push('High Debt to Equity (> 2.0)');
-    if (financials.freeCashFlow?.value <= 0) weaknesses.push('Negative or Zero Free Cash Flow');
-    if (financials.revenueGrowthYOY?.value <= 0) weaknesses.push('Weak or Negative Revenue Growth');
-    if (research.sentimentScore?.value <= 40) weaknesses.push('Negative Market Sentiment');
+    const de = financials.debtToEquity?.value;
+    if (de > 2.0) weaknesses.push(`Debt to Equity: ${de} (High, > 2.0)`);
+    
+    const fcf = financials.freeCashFlow?.value;
+    if (fcf <= 0) weaknesses.push(`Free Cash Flow: ${fcf} (Negative or Zero)`);
+    
+    const revGrowth = financials.revenueGrowthYOY?.value;
+    if (revGrowth <= 0) weaknesses.push(`Revenue Growth: ${(revGrowth * 100).toFixed(1)}% (Weak or Negative)`);
+    
+    const sent = research.sentimentScore?.value;
+    if (sent <= 40) weaknesses.push(`Market Sentiment: ${sent}/100 (Negative)`);
 
-    const hasCriticalRisk = [
+    const allRisks = [
       ...(risks.macroRisks || []),
       ...(risks.microRisks || []),
       ...(risks.regulatoryConcerns || [])
-    ].some(r => r.severity === RiskSeverity.CRITICAL);
-
-    if (hasCriticalRisk) weaknesses.push('Critical Risk Identified');
+    ];
+    for (const r of allRisks) {
+      if (r.severity === 'CRITICAL') {
+        weaknesses.push(`CRITICAL Risk: ${r.value}`);
+      } else if (r.severity === 'HIGH') {
+        weaknesses.push(`HIGH Risk: ${r.value}`);
+      }
+    }
 
     return weaknesses;
   }
