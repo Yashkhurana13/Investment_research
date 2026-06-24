@@ -47,3 +47,43 @@ export async function fetchCompanyProfile(ticker: string): Promise<Result<any>> 
     return { success: false, error };
   }
 }
+
+export async function fetchKeyMetrics(ticker: string): Promise<Result<any>> {
+  try {
+    const url = `${FMP_BASE_URL}/key-metrics/${ticker}?apikey=${env.FMP_API_KEY}`;
+    const rawData = await fetchWithRetry(url);
+    return { success: true, data: rawData, metadata: { source: 'Financial Modeling Prep', url, retrievedAt: new Date().toISOString(), confidenceWeight: 0.9 } };
+  } catch (error: any) {
+    return { success: false, error };
+  }
+}
+
+export async function fetchIncomeStatement(ticker: string): Promise<Result<any>> {
+  try {
+    const url = `${FMP_BASE_URL}/income-statement/${ticker}?apikey=${env.FMP_API_KEY}`;
+    const rawData = await fetchWithRetry(url);
+    return { success: true, data: rawData, metadata: { source: 'Financial Modeling Prep', url, retrievedAt: new Date().toISOString(), confidenceWeight: 0.9 } };
+  } catch (error: any) {
+    return { success: false, error };
+  }
+}
+
+export async function fetchBalanceSheet(ticker: string): Promise<Result<any>> {
+  try {
+    const url = `${FMP_BASE_URL}/balance-sheet-statement/${ticker}?apikey=${env.FMP_API_KEY}`;
+    const rawData = await fetchWithRetry(url);
+    return { success: true, data: rawData, metadata: { source: 'Financial Modeling Prep', url, retrievedAt: new Date().toISOString(), confidenceWeight: 0.9 } };
+  } catch (error: any) {
+    return { success: false, error };
+  }
+}
+
+export async function fetchCashFlowStatement(ticker: string): Promise<Result<any>> {
+  try {
+    const url = `${FMP_BASE_URL}/cash-flow-statement/${ticker}?apikey=${env.FMP_API_KEY}`;
+    const rawData = await fetchWithRetry(url);
+    return { success: true, data: rawData, metadata: { source: 'Financial Modeling Prep', url, retrievedAt: new Date().toISOString(), confidenceWeight: 0.9 } };
+  } catch (error: any) {
+    return { success: false, error };
+  }
+}

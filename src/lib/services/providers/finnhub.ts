@@ -11,7 +11,15 @@ export type Result<T> =
   | { success: true; data: T; metadata: SourceMetadata }
   | { success: false; error: Error };
 
-const BaseFinnhubSchema = z.any();
+const FinnhubSearchSchema = z.object({
+  count: z.number(),
+  result: z.array(z.object({
+    description: z.string(),
+    displaySymbol: z.string(),
+    symbol: z.string(),
+    type: z.string()
+  }))
+});
 
 export async function resolveTicker(query: string): Promise<Result<any>> {
   const cacheKey = `finnhub:search:${query}`;
@@ -29,7 +37,7 @@ export async function resolveTicker(query: string): Promise<Result<any>> {
     const url = `${FINNHUB_BASE_URL}/search?q=${encodeURIComponent(query)}&token=${env.FINNHUB_API_KEY}`;
     const rawData = await fetchWithRetry(url);
 
-    const parsed = BaseFinnhubSchema.safeParse(rawData);
+    const parsed = FinnhubSearchSchema.safeParse(rawData);
     if (!parsed.success) {
       throw new DataValidationError('Invalid search payload from Finnhub');
     }
