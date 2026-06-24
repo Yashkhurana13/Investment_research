@@ -27,24 +27,47 @@ export interface FinancialMetricsOutput {
   currentRatio?: FactRecord<number>;
 }
 
+export enum RiskSeverity {
+  LOW = 'LOW',
+  MEDIUM = 'MEDIUM',
+  HIGH = 'HIGH',
+  CRITICAL = 'CRITICAL'
+}
+
+export interface RiskRecord {
+  value: string;
+  severity: RiskSeverity;
+  metadata: SourceMetadata;
+}
+
 export interface RiskAssessmentOutput {
-  macroRisks: FactRecord<string>[];
-  microRisks: FactRecord<string>[];
-  regulatoryConcerns: FactRecord<string>[];
+  macroRisks: RiskRecord[];
+  microRisks: RiskRecord[];
+  regulatoryConcerns: RiskRecord[];
 }
 
 export interface ScoringOutput {
+  financialHealthScore: number;
+  growthScore: number;
+  riskScore: number;
+  sentimentScore: number;
   totalScore: number;
-  category: ScoreCategory;
-  breakdown: Record<string, number>;
+  recommendation: ScoreCategory;
 }
 
 export interface EvidencePackage {
-  asset: string;
+  company: {
+    ticker: string;
+    companyName?: string;
+  };
   financials: FinancialMetricsOutput;
   research: CompanyResearchOutput;
   risks: RiskAssessmentOutput;
-  score: ScoringOutput;
+  scoring: ScoringOutput;
+  strengths: string[];
+  weaknesses: string[];
+  evidenceQualityScore: number;
+  confidenceScore: number;
 }
 
 export interface JudgeVerdict {

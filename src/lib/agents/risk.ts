@@ -48,9 +48,10 @@ ${contextText}`;
 
     const analysis = await llm.invoke(prompt);
 
-    // 3. Format into FactRecords with attribution
-    const createFact = <T>(value: T): FactRecord<T> => ({
-      value,
+    // 3. Format into RiskRecords with attribution
+    const createRisk = (item: { description: string, severity: 'LOW'|'MEDIUM'|'HIGH'|'CRITICAL' }): any => ({
+      value: item.description,
+      severity: item.severity,
       metadata: {
         source: 'Tavily + Gemini 2.5 Flash',
         url: primarySourceUrl,
@@ -60,9 +61,9 @@ ${contextText}`;
     });
 
     return {
-      macroRisks: analysis.macroRisks.map((r: string) => createFact(r)),
-      microRisks: analysis.microRisks.map((r: string) => createFact(r)),
-      regulatoryConcerns: analysis.regulatoryConcerns.map((r: string) => createFact(r)),
+      macroRisks: analysis.macroRisks.map(createRisk),
+      microRisks: analysis.microRisks.map(createRisk),
+      regulatoryConcerns: analysis.regulatoryConcerns.map(createRisk),
     };
   }
 }
