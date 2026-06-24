@@ -13,9 +13,9 @@ export interface FactRecord<T> {
 }
 
 export interface CompanyResearchOutput {
-  sentimentScore: number;
-  newsSummary: string;
-  catalysts: string[];
+  sentimentScore: FactRecord<number>;
+  newsSummary: FactRecord<string>;
+  catalysts: FactRecord<string>[];
 }
 
 export interface FinancialMetricsOutput {
@@ -27,9 +27,9 @@ export interface FinancialMetricsOutput {
 }
 
 export interface RiskAssessmentOutput {
-  macroRisks: string[];
-  microRisks: string[];
-  regulatoryConcerns: string[];
+  macroRisks: FactRecord<string>[];
+  microRisks: FactRecord<string>[];
+  regulatoryConcerns: FactRecord<string>[];
 }
 
 export interface ScoringOutput {
