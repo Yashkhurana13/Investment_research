@@ -1,7 +1,7 @@
 import { z } from 'zod';
 import { fetchWithRetry } from '../core/http-client';
 import { DataValidationError } from '../core/errors';
-import { cacheGet, cacheSet } from '../redis';
+import { defaultCache } from '../../core/cache';
 import { env } from '../../env';
 import { SourceMetadata } from '../../graph/state';
 
@@ -17,7 +17,7 @@ const BaseFmpSchema = z.any();
 
 export async function fetchCompanyProfile(ticker: string): Promise<Result<any>> {
   const cacheKey = `fmp:profile:${ticker}`;
-  const cached = await cacheGet<any>(cacheKey);
+  const cached = await defaultCache.get<any>(cacheKey);
 
   if (cached) {
     return {
@@ -36,7 +36,7 @@ export async function fetchCompanyProfile(ticker: string): Promise<Result<any>> 
       throw new DataValidationError('Invalid payload from FMP');
     }
 
-    await cacheSet(cacheKey, parsed.data, 86400 * 7); // 7 day cache
+    await defaultCache.set(cacheKey, parsed.data, 86400 * 7); // 7 day cache
 
     return {
       success: true,

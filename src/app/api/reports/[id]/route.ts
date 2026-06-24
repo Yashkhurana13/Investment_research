@@ -3,10 +3,11 @@ import { getAnalysisReport } from '@/lib/api/report-service';
 
 export async function GET(
   req: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const analysisId = params.id;
+    const { id } = await params;
+    const analysisId = id;
     
     if (!analysisId) {
       return NextResponse.json({ error: 'Missing analysis ID' }, { status: 400 });
@@ -20,7 +21,7 @@ export async function GET(
 
     return NextResponse.json(report);
   } catch (error: any) {
-    console.error(`API Error in GET /api/reports/${params.id}:`, error);
+    console.error(`API Error in GET /api/reports:`, error);
     return NextResponse.json(
       { error: 'Internal Server Error' },
       { status: 500 }

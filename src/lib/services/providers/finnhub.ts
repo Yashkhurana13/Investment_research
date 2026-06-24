@@ -1,7 +1,7 @@
 import { z } from 'zod';
 import { fetchWithRetry } from '../core/http-client';
 import { DataValidationError } from '../core/errors';
-import { cacheGet, cacheSet } from '../redis';
+import { defaultCache } from '../../core/cache';
 import { env } from '../../env';
 import { SourceMetadata } from '../../graph/state';
 
@@ -23,7 +23,7 @@ const FinnhubSearchSchema = z.object({
 
 export async function resolveTicker(query: string): Promise<Result<any>> {
   const cacheKey = `finnhub:search:${query}`;
-  const cached = await cacheGet<any>(cacheKey);
+  const cached = await defaultCache.get<any>(cacheKey);
 
   if (cached) {
     return {
@@ -42,7 +42,7 @@ export async function resolveTicker(query: string): Promise<Result<any>> {
       throw new DataValidationError('Invalid search payload from Finnhub');
     }
 
-    await cacheSet(cacheKey, parsed.data, 86400 * 7);
+    await defaultCache.set(cacheKey, parsed.data, 86400 * 7);
 
     return {
       success: true,

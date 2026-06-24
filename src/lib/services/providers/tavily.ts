@@ -1,7 +1,7 @@
 import { z } from 'zod';
 import { fetchWithRetry } from '../core/http-client';
 import { DataValidationError } from '../core/errors';
-import { cacheGet, cacheSet } from '../redis';
+import { defaultCache } from '../../core/cache';
 import { env } from '../../env';
 import { SourceMetadata } from '../../graph/state';
 
@@ -15,7 +15,7 @@ const TavilySearchSchema = z.any();
 
 export async function searchWeb(query: string): Promise<Result<any>> {
   const cacheKey = `tavily:search:${query}`;
-  const cached = await cacheGet<any>(cacheKey);
+  const cached = await defaultCache.get<any>(cacheKey);
 
   if (cached) {
     return {
@@ -45,7 +45,7 @@ export async function searchWeb(query: string): Promise<Result<any>> {
       throw new DataValidationError('Invalid search payload from Tavily');
     }
 
-    await cacheSet(cacheKey, parsed.data, 3600); // 1 hour cache for news/search
+    await defaultCache.set(cacheKey, parsed.data, 86400); // 1 hour cache for news/search
 
     return {
       success: true,
