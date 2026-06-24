@@ -1,0 +1,59 @@
+// prisma/schema.prisma
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model Analysis {
+  id              String         @id @default(uuid())
+  userId          String         
+  rawQuery        String
+  resolvedTicker  String?
+  status          AnalysisStatus @default(PENDING)
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+
+  reports         Report[]
+  agentOutputs    AgentOutput[]
+}
+
+model Report {
+  id              String         @id @default(uuid())
+  analysisId      String
+  analysis        Analysis       @relation(fields: [analysisId], references: [id])
+  contentMarkdown String         @db.Text
+  scoreCategory   ScoreCategory
+  totalScore      Float
+  confidenceScore Float
+  createdAt       DateTime       @default(now())
+}
+
+model AgentOutput {
+  id              String         @id @default(uuid())
+  analysisId      String
+  analysis        Analysis       @relation(fields: [analysisId], references: [id])
+  agentName       String
+  outputData      Json           
+  startedAt       DateTime?
+  completedAt     DateTime?
+  executionTimeMs Int?
+  createdAt       DateTime       @default(now())
+}
+
+enum AnalysisStatus {
+  PENDING
+  IN_PROGRESS
+  COMPLETED
+  FAILED
+  NEEDS_REVIEW
+}
+
+enum ScoreCategory {
+  INVEST
+  WATCHLIST
+  PASS
+}
