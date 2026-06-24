@@ -24,6 +24,7 @@ export interface FinancialMetricsOutput {
   debtToEquity: FactRecord<number>;
   grossMargin: FactRecord<number>;
   freeCashFlow: FactRecord<number>;
+  currentRatio?: FactRecord<number>;
 }
 
 export interface RiskAssessmentOutput {
