@@ -2,12 +2,16 @@ import { NextResponse } from 'next/server';
 import { startAnalysis } from '@/lib/api/analysis-service';
 import { z } from 'zod';
 
+const analyzeSchema = z.object({
+  query: z.string().min(1, "Query is required").max(100, "Query is too long")
+});
+
 export async function POST(req: Request) {
   try {
     const body = await req.json();
+    const parsed = analyzeSchema.parse(body);
     
-    // Will throw ZodError if validation fails inside service
-    const result = await startAnalysis(body);
+    const result = await startAnalysis(parsed.query);
     
     return NextResponse.json(result, { status: 202 }); // 202 Accepted
   } catch (error: any) {

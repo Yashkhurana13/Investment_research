@@ -11,8 +11,18 @@ const envSchema = z.object({
 const parsedEnv = envSchema.safeParse(process.env);
 
 if (!parsedEnv.success) {
-  console.error('❌ Invalid environment variables:', parsedEnv.error.format());
-  throw new Error('Invalid environment variables');
+  console.error('❌ Environment variables are missing or invalid. Check your .env file.');
 }
 
-export const env = parsedEnv.data;
+export const env = parsedEnv.success ? parsedEnv.data : (process.env as any);
+
+export function validateEnv() {
+  const result = envSchema.safeParse(process.env);
+  if (!result.success) {
+    return {
+      isValid: false,
+      errors: result.error.format()
+    };
+  }
+  return { isValid: true };
+}
