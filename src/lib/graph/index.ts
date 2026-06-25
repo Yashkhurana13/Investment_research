@@ -28,7 +28,7 @@ const workflow = new StateGraph(ResearchGraphAnnotation)
   .addNode('tickerResolver', tickerResolverNode)
   .addNode('manager', managerNode)
   .addNode('financial', financialNode)
-  .addNode('companyResearch', companyResearchNode)
+  .addNode('researchAgentNode', companyResearchNode)
   .addNode('risk', riskNode)
   .addNode('dataJoin', dataJoinNode)
   .addNode('scoring', scoringNode)
@@ -49,12 +49,12 @@ workflow.addConditionalEdges('tickerResolver', routeAfterTickerResolver, {
 
 // 2. Parallel Execution (Data Extraction)
 workflow.addEdge('manager', 'financial');
-workflow.addEdge('manager', 'companyResearch');
+workflow.addEdge('manager', 'researchAgentNode');
 workflow.addEdge('manager', 'risk');
 
 // 3. Fan-in Data Extraction
 workflow.addEdge('financial', 'dataJoin');
-workflow.addEdge('companyResearch', 'dataJoin');
+workflow.addEdge('researchAgentNode', 'dataJoin');
 workflow.addEdge('risk', 'dataJoin');
 
 workflow.addConditionalEdges('dataJoin', routeAfterDataCollection, {
